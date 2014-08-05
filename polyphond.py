@@ -69,6 +69,11 @@ class Context:
                     'name': name.replace('_', ' ')
                 }
 
+    def pause(self):
+        if self.process and self.process.returncode is None:
+            self.paused = not self.paused
+            self.process.stdin.write(b'pause\n')
+            self.process.stdin.flush()
 
     def play(self, kind, names, path):
         threading.Thread(target=self.launch_process,
@@ -80,7 +85,7 @@ class Context:
             self.process.wait()
 
         cmd = "mplayer -slave -quiet -idle"
-        print('LAUNCH')
+        self.paused = False
         self.process = subprocess.Popen(
             cmd,
             shell=True,
@@ -115,8 +120,12 @@ class Context:
             if process.returncode is not None:
                 process.stdin.close()
                 return
+
+            if self.paused:
+                continue
+
             for cmd in COMMANDS:
-                process.stdin.write(cmd + b'\n')
+                process.stdin.write(b'pausing_keep ' + cmd + b'\n')
                 process.stdin.flush()
 
     def read_loop(self, process):
@@ -171,6 +180,9 @@ def play(path):
     names = names.split('+')
     CTX.play(kind, names, folder)
 
+@route('/pause')
+def pause():
+    CTX.pause()
 
 def load_config():
 
