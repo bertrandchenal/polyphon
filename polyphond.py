@@ -85,6 +85,7 @@ class Context:
     def launch_process(self, kind, names, path):
         if self.process:
             self.process.stdin.write(b'quit\n')
+            self.process.stdin.flush()
             self.process.wait()
 
         cmd = "mplayer -slave -quiet -idle"
@@ -219,7 +220,6 @@ def load_config():
             value = value[7:]
         option['radios'].append((key, value))
     return option
-
 
 if __name__ == '__main__':
     CTX = Context(load_config())
