@@ -195,6 +195,8 @@ def load_config():
         exit('Config file "%s" not found' % config_file)
 
     config = configparser.ConfigParser()
+    # The default optionxform converts key to lowercase
+    config.optionxform = str
     config.read(config_file)
 
     option = {}
