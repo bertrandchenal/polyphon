@@ -159,7 +159,7 @@ Ctx.prototype.update_status = function() {
 
     // Set new timer
     prm.always(function() {
-        // UPD_TIMER = setTimeout(this.update_status.bind(this), 1000);
+        UPD_TIMER = setTimeout(this.update_status.bind(this), 1000);
     }.bind(this));
     return prm;
 };
