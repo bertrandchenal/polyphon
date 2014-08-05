@@ -37,6 +37,7 @@ class Context:
         self.static = self.expand_path(option.get('static', 'static'))
         self.radios = option.get('radios', [])
         self.status = {}
+        self.paused = None
         self.process = None
 
     @staticmethod
