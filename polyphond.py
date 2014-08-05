@@ -54,7 +54,9 @@ class Context:
             rel_path = os.path.join(*path) if path else ''
             full_path = os.path.join(self.music, rel_path)
 
-            for name in os.listdir(full_path):
+            names = os.listdir(full_path)
+            names.sort()
+            for name in names:
                 f = os.path.join(full_path, name)
                 yield {
                     'type': 'dir' if os.path.isdir(f) else 'file',
