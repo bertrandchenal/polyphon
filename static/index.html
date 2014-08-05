@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>POLYPHON</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width">
+  <link rel="stylesheet" href="static/custom.css">
+  <script src="static/jquery-2.0.3.min.js"></script>
+  <script src="static/observable.js"></script>
+  <script src="static/polyphon.js"></script>
+
+</head>
+<html>
+  <body>
+    <div class="container" id="status">
+      <div class="span4">
+        <a href="#" id="up" class="action"><i class="icon-left-open"></i></a>
+      </div>
+      <div class="span24" id="test">
+        <div id="filename">&nbsp;</div>
+      </div>
+      <div class="span4">
+        <a href="#" id="pause" class="action"></a>
+      </div>
+    </div>
+
+
+    <div class="container" id="content">
+      <div class="span32">
+        <ul id="listing" class="container">
+        </ul>
+      </div>
+    </div>
+
+    <div id="footer" class="container">
+      <div class="container">
+        <div class="span8">
+          <a href="#" id="file" class="action"><i class="icon-home"></i>Home</a>
+        </div>
+        <div class="span8">
+          <a href="#" id="radio" class="action"><i class="icon-wifi"></i>Radios</a>
+        </div>
+
+        <div class="span16">
+          <span id="track_pos">&nbsp;</span>
+        </div>
+      </div>
+
+      <div>
+          <span id="percent_bar"></span>
+      </div>
+    </div>
+
+</body>
+</html>

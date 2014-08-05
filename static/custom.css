@@ -1,0 +1,196 @@
+
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+
+body {
+    width: 32em;
+    margin: 0 auto;
+    color: grey;
+    font-family: sans, sans-serif;
+    background-color: whitesmoke;
+    margin-bottom: 4em;
+}
+
+.container {
+    width: 32em;
+}
+
+.container:after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
+[class*="span"] {
+    float: left;
+    margin: 0;
+}
+
+.span32 {
+    width: 100%;
+}
+
+.span24 {
+    width: 75%;
+}
+
+.span16 {
+    width: 50%;
+}
+
+.span8 {
+    width: 25%;
+}
+
+.span4 {
+    width: 12%;
+}
+
+#listing {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    margin-top: 4em;
+    border: 1px solid #e1e6ee;
+    background-color: white;
+}
+
+
+#listing > li {
+    float: left;
+    padding: 0;
+    margin: 0;
+    text-align: left;
+    list-style-type: none;
+    border-bottom: 1px solid #e1e6ee;
+    width: 100%;
+    cursor: pointer
+}
+
+#listing > li:last-child {
+    border: none;
+}
+
+#listing > li > a {
+    display: block;
+    padding: 1em;
+    text-decoration: none;
+    color: dimgray;
+    font-size: 80%;
+}
+
+.highlight > a {
+    background-color: #C2D5E2;
+}
+
+
+.action {
+    padding-left: 0.4em;
+}
+
+#status {
+    background-color: #92b1c5;
+    position: fixed;
+    color: white;
+    padding: 1em 0;
+}
+
+#footer {
+    position: fixed;
+    bottom: 0;
+    background-color: #92b1c5;
+    color: white;
+}
+
+#footer .container {
+    padding: 1em 0;
+}
+
+#footer a,
+#status a {
+    color: white;
+}
+
+
+#filename {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+
+#percent_bar {
+    height: 2px;
+    width: 0;
+    background-color: darkorange;
+    float: left;
+    padding: 0;
+    margin: 0;
+}
+
+.hidden {
+    visibility: hidden;
+}
+
+#song p {
+    padding-top: 0.4em;
+    font-weight: bold;
+    clear: both;
+}
+
+a {
+    text-decoration: none;
+}
+
+.active {
+    font-weight: bold;
+}
+
+
+
+/* Fontello */
+@font-face {
+    font-family: 'fontello';
+    src: url('fontello.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+[class^="icon-"]:before, [class*=" icon-"]:before {
+    font-family: "fontello";
+    font-style: normal;
+    font-weight: normal;
+    speak: none;
+
+    display: inline-block;
+    text-decoration: inherit;
+    width: 1em;
+    margin-right: .2em;
+    text-align: center;
+    /* opacity: .8; */
+
+    /* For safety - reset parent styles, that can break glyph codes*/
+    font-variant: normal;
+    text-transform: none;
+
+    /* fix buttons height, for twitter bootstrap */
+    line-height: 1em;
+    font-size: 120%;
+}
+
+@media screen and (max-width: 32em) {
+    body, .container {
+        width: 100%;
+    }
+}
+
+
+.icon-home:before { content: '\e803'; } /* '' */
+.icon-left-open:before { content: '\e804'; } /* '' */
+.icon-play:before { content: '\e800'; } /* '' */
+.icon-pause:before { content: '\e801'; } /* '' */
+.icon-wifi:before { content: '\e802'; } /* '' */
