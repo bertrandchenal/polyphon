@@ -220,4 +220,4 @@ def load_config():
 
 if __name__ == '__main__':
     CTX = Context(load_config())
-    run(host='localhost', port=8000, debug=True)
+    run(host='*', port=8081)
