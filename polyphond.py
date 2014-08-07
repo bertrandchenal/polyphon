@@ -36,7 +36,7 @@ class Context:
         self.music = self.expand_path(option['music'])
         self.static = self.expand_path(option.get('static', 'static'))
         self.radios = option.get('radios', [])
-        self.status = {}
+        self.status = {'paused': None}
         self.paused = None
         self.process = None
 
@@ -74,11 +74,15 @@ class Context:
 
     def pause(self):
         if self.process and self.process.returncode is None:
-            self.paused = not self.paused
             self.process.stdin.write(b'pause\n')
             self.process.stdin.flush()
 
+            self.paused = not self.paused
+            self.status['paused'] = self.paused
+
     def play(self, kind, names, path):
+        self.paused = False
+        self.status['paused'] = self.paused
         threading.Thread(target=self.launch_process,
                          args=(kind, names, path)).start()
 
@@ -89,7 +93,6 @@ class Context:
             self.process.wait()
 
         cmd = "mplayer -slave -quiet -idle"
-        self.paused = False
         self.process = subprocess.Popen(
             cmd,
             shell=True,

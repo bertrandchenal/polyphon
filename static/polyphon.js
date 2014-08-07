@@ -47,6 +47,9 @@ var Ctx = function(el) {
 
     Observable.bind('#pause', {
         'html': function() {
+            if (this.paused() === null) {
+                return '';
+            }
             return this.paused() ? PLAY_ICO : PAUSE_ICO;
         }.bind(this)
     }).click(this.do_pause.bind(this));
@@ -140,7 +143,7 @@ Ctx.prototype.update_status = function() {
 
     // Clean result & trigger observables
     prm.done(function(status) {
-        this.paused(status.paused == "1")
+        this.paused(status.paused)
         this.playing_path(status.playing_path);
         this.filename(status.filename);
 
