@@ -245,7 +245,7 @@ if __name__ == '__main__':
     app.static_folder = option.static
 
     handler = RotatingFileHandler(option.logfile)
-    handler.setLevel(logging.DEBUG)
+    handler.setLevel(logging.INFO)
     app.logger.addHandler(handler)
 
     app.run(host='0.0.0.0', port=8081)
