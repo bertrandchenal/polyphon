@@ -28,8 +28,6 @@ var Ctx = function(el) {
     this.track_pos = new Observable('');
     this.track_percent = new Observable('1%');
     this.playing_path = new Observable();
-    this.kb_nav = new Observable(false);
-    this.kb_nav.subscribe(this.update_kb_nav.bind(this));
 
     // Bind DOM
     Observable.bind('#track_pos', {
@@ -72,6 +70,7 @@ var Ctx = function(el) {
 
 Ctx.prototype.drill = function(ev) {
     var el = $(ev.target);
+    this.highlight(el.parent('li'));
     var name = el.attr('data-url');
     this.path.push(name);
     this.drill_stack.push(this.listing.find('li').detach());
@@ -119,7 +118,9 @@ Ctx.prototype.get_data_name = function(el) {
 };
 
 Ctx.prototype.play = function(ev) {
+    // Update highlight
     var el = ev.target;
+    this.highlight(el.parent('li'));
 
     if (this.path[0] == 'file') {
         var names = $.map(
@@ -168,28 +169,40 @@ Ctx.prototype.update_status = function() {
 };
 
 
+Ctx.prototype.highlight = function(el, old_el) {
+    if (!old_el) {
+        old_el = this.listing.find('.highlight');
+    }
+    old_el.removeClass('highlight');
+    console.log(el);
+    el.addClass('highlight');
+};
+
 Ctx.prototype.go_next = function(backward) {
     var el = $('.highlight');
-    var sibling = backward ? el.prev() : el.next();
+    if (!el.length) {
+        var sel = backward ? 'li:last-child': 'li:first-child';
+        el = this.listing.find(sel);
+        sibling = el;
+    } else {
+        var sibling = backward ? el.prev() : el.next();
+    }
+
     if (!sibling.length) {
         return;
     }
-    sibling.addClass('highlight');
-    el.removeClass('highlight');
+    this.highlight(sibling, el);
     this.auto_scroll();
 };
 
 
 Ctx.prototype.update_kb_nav = function() {
-    if (!this.kb_nav()) {
-        this.listing.find('.highlight').removeClass('highlight');
-        return;
-    }
-    var el = this.listing.find('.active');
+    return
+    var el = this.listing.find('.highlight');
     if (!el.length) {
         el = this.listing.find('li:first-child');
+        this.highlight(el)
     }
-    el.addClass('highlight');
 }
 
 
@@ -230,17 +243,6 @@ var init = function() {
 
         if (ev.which == 'P'.charCodeAt(0)) {
             ctx.do_pause();
-            return;
-        }
-
-        if (ev.which == 9) {
-            // 9 is tab
-            ctx.kb_nav(!ctx.kb_nav());
-            return false;
-        }
-
-
-        if (!ctx.kb_nav()) {
             return;
         }
 
