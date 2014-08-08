@@ -174,7 +174,6 @@ Ctx.prototype.highlight = function(el, old_el) {
         old_el = this.listing.find('.highlight');
     }
     old_el.removeClass('highlight');
-    console.log(el);
     el.addClass('highlight');
 };
 
