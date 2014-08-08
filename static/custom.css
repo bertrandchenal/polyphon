@@ -92,7 +92,7 @@ body {
     padding-left: 0.4em;
 }
 
-#status {
+#header {
     background-color: #92b1c5;
     position: fixed;
     color: white;
@@ -111,7 +111,7 @@ body {
 }
 
 #footer a,
-#status a {
+#header a {
     color: white;
 }
 
