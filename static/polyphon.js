@@ -119,12 +119,12 @@ Ctx.prototype.get_data_name = function(el) {
 
 Ctx.prototype.play = function(ev) {
     // Update highlight
-    var el = ev.target;
+    var el = $(ev.target);
     this.highlight(el.parent('li'));
 
     if (this.path[0] == 'file') {
         var names = $.map(
-            $(el).parent().nextAll('li').addBack().children('a.file'),
+            el.parent().nextAll('li').addBack().children('a.file'),
             this.get_data_name
         );
     } else {
