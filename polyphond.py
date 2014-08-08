@@ -6,12 +6,11 @@ import subprocess
 import select
 import sys
 import threading
+from logging.handlers import RotatingFileHandler
 from time import sleep
 
-from bottle import Bottle, route, run, static_file
+from flask import Flask, jsonify
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger('polyphon')
 CTX = None
 LI_TPL = '''
 <li>
@@ -26,16 +25,17 @@ COMMANDS = [
     b'get_time_length',
 ]
 
+app = Flask("polyphon")
 
 class Context:
 
     def __init__(self, option):
-        if not 'music' in option:
+        if not option.music:
             exit('"music" path not defined')
 
-        self.music = self.expand_path(option['music'])
-        self.static = self.expand_path(option.get('static', 'static'))
-        self.radios = option.get('radios', [])
+        self.music = self.expand_path(option.music)
+        self.static = self.expand_path(option.static)
+        self.radios = option.radios
         self.status = {'paused': None}
         self.paused = None
         self.process = None
@@ -83,6 +83,7 @@ class Context:
     def play(self, kind, names, path):
         self.paused = False
         self.status['paused'] = self.paused
+        self.status['playing_path'] = path
         threading.Thread(target=self.launch_process,
                          args=(kind, names, path)).start()
 
@@ -153,19 +154,16 @@ class Context:
         key, val = data[4:].split('=')
         self.status[key.lower()] = val.strip().strip("'")
 
-@route('/static/<filename>')
-def static(filename):
-    return static_file(filename, root=CTX.static)
 
-@route('/')
+@app.route('/')
 def index():
-    return static('index.html')
+    return app.send_static_file('index.html')
 
-@route('/status')
+@app.route('/status')
 def status():
-    return CTX.status
+    return jsonify(**CTX.status)
 
-@route('/browse/<path:path>')
+@app.route('/browse/<path:path>')
 def browse(path):
     path_list = path.split('/')
     if not path_list:
@@ -174,7 +172,7 @@ def browse(path):
     items = CTX.browse(kind, path_list)
     return '\n'.join(LI_TPL.format(**i) for i in items)
 
-@route('/play/<path:path>')
+@app.route('/play/<path:path>')
 def play(path):
     kind, tail = path.split('/', 1)
     if kind == 'file':
@@ -186,10 +184,20 @@ def play(path):
         folder = None
     names = names.split('+')
     CTX.play(kind, names, folder)
+    raise
+    return 'ok'
 
-@route('/pause')
+@app.route('/pause')
 def pause():
     CTX.pause()
+    return 'ok'
+
+
+class Option:
+
+    def __init__(self, **kw):
+        self.__dict__.update(kw)
+
 
 def load_config():
 
@@ -206,24 +214,37 @@ def load_config():
     config.optionxform = str
     config.read(config_file)
 
-    option = {}
+    data = {
+        'static': 'static',
+        'logfile': 'polyphon.log',
+    }
 
     if not 'main' in config:
         exit('Section "main" missing in config file')
     for key in config['main']:
-        option[key] = config['main'][key]
+        data[key] = config['main'][key]
 
-    option['radios'] = []
+    data['radios'] = []
     if not 'radios' in config:
-        return option
+        return data
 
     for key in config['radios']:
         value = config['radios'][key]
         if value.startswith('http://'):
             value = value[7:]
-        option['radios'].append((key, value))
-    return option
+        data['radios'].append((key, value))
+
+
+    return Option(**data)
+
 
 if __name__ == '__main__':
-    CTX = Context(load_config())
-    run(host='0.0.0.0', port=8081)
+    option = load_config()
+    CTX = Context(option)
+    app.static_folder = option.static
+
+    handler = RotatingFileHandler(option.logfile)
+    handler.setLevel(logging.DEBUG)
+    app.logger.addHandler(handler)
+
+    app.run(host='0.0.0.0', port=8081)
