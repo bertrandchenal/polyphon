@@ -112,9 +112,6 @@ Ctx.prototype.do_pause = function() {
     prm.done(this.update_status.bind(this));
 };
 
-Ctx.prototype.get_data_name = function(el) {
-    return el.getAttribute('data-url');
-};
 
 Ctx.prototype.play = function(ev) {
     // Update highlight
@@ -124,10 +121,10 @@ Ctx.prototype.play = function(ev) {
     if (this.path[0] == 'file') {
         var names = $.map(
             el.parent().nextAll('li').addBack().children('a.file'),
-            this.get_data_name
+            el.data('url')
         );
     } else {
-        var names = [this.get_data_name(el)];
+        var names = [el.data('url')];
     }
 
     var prm = $.get('play/' + this.path.join('/') + '/' + names.join('+'))
