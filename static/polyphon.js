@@ -121,7 +121,7 @@ Ctx.prototype.play = function(ev) {
     if (this.path[0] == 'file') {
         var names = $.map(
             el.parent().nextAll('li').addBack().children('a.file'),
-            el.data('url')
+            function (e) {return $(e).data('url');}
         );
     } else {
         var names = [el.data('url')];

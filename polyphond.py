@@ -185,7 +185,6 @@ def play(path):
         folder = None
     names = names.split('+')
     CTX.play(kind, names, folder)
-    raise
     return 'ok'
 
 @app.route('/pause')
