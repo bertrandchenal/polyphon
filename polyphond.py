@@ -147,7 +147,7 @@ class Context:
 
             if ready:
                 data = process.stdout.readline()
-                self.update_status(data.decode())
+                self.update_status(data.decode('utf-8', errors='ignore'))
 
     def update_status(self, data):
         if not data.startswith('ANS_'):
