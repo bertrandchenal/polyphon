@@ -12,6 +12,8 @@ from time import sleep
 
 from flask import Flask, jsonify
 
+PLAY_PAUSE_LOCK = threading.Lock()
+
 CTX = None
 LI_TPL = '''
 <li>
@@ -107,6 +109,7 @@ class Context:
         threading.Thread(target=self.write_loop, args=(self.process,)).start()
         threading.Thread(target=self.read_loop, args=(self.process,)).start()
 
+        #TODO put volume to 100%
         for pos, name in enumerate(names):
             if kind == 'file':
                 base = os.path.join(self.music, *path)
@@ -184,12 +187,15 @@ def play(path):
         names = tail
         folder = None
     names = names.split('+')
-    CTX.play(kind, names, folder)
+
+    with PLAY_PAUSE_LOCK:
+        CTX.play(kind, names, folder)
     return 'ok'
 
 @app.route('/pause')
 def pause():
-    CTX.pause()
+    with PLAY_PAUSE_LOCK:
+        CTX.pause()
     return 'ok'
 
 
@@ -247,4 +253,4 @@ if __name__ == '__main__':
     handler.setLevel(logging.INFO)
     app.logger.addHandler(handler)
 
-    app.run(host='0.0.0.0', port=8081)
+    app.run(host='0.0.0.0', port=8081, threaded=True)
