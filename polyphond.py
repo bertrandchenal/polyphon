@@ -263,6 +263,9 @@ if __name__ == '__main__':
 
     handler = RotatingFileHandler(option.logfile)
     handler.setLevel(logging.INFO)
+    formatter = logging.Formatter(
+        '%(asctime)s:%(name)s:%(levelname)s:%(message)s')
+    handler.setFormatter(formatter)
     app.logger.addHandler(handler)
-
+    app.logger.warning('Server started')
     app.run(host='0.0.0.0', port=8081, threaded=True)
