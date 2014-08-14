@@ -30,6 +30,10 @@ COMMANDS = [
 
 app = Flask("polyphon")
 
+
+class ChrootException(Exception):
+    pass
+
 class Context:
 
     def __init__(self, option):
@@ -48,7 +52,7 @@ class Context:
         path = os.path.expanduser(path)
         if not os.path.exists(path):
             exit('Path "%s" not found' % path)
-        return path
+        return os.path.realpath(path)
 
     def browse(self, kind, path):
         if kind == 'file':
@@ -56,6 +60,7 @@ class Context:
 
             rel_path = os.path.join(*path) if path else ''
             full_path = os.path.join(self.music, rel_path)
+            self.check_root(full_path)
 
             names = os.listdir(full_path)
             names.sort()
@@ -84,6 +89,7 @@ class Context:
             self.status['paused'] = self.paused
 
     def play(self, kind, names, path):
+        self.check_root(path)
         self.paused = False
         self.status['paused'] = self.paused
         self.status['playing_path'] = path
@@ -157,6 +163,12 @@ class Context:
             return
         key, val = data[4:].split('=')
         self.status[key.lower()] = val.strip().strip("'")
+
+    def check_root(self, path):
+        real = os.path.realpath(path)
+        if not os.path.commonprefix([real, self.music]) == self.music:
+            raise ChrootException('Invalid path')
+
 
 
 @app.route('/')
