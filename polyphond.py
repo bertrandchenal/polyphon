@@ -89,7 +89,6 @@ class Context:
             self.status['paused'] = self.paused
 
     def play(self, kind, names, path):
-        self.check_root(path)
         self.paused = False
         self.status['paused'] = self.paused
         self.status['playing_path'] = path
@@ -119,6 +118,7 @@ class Context:
         for pos, name in enumerate(names):
             if kind == 'file':
                 base = os.path.join(self.music, *path)
+                self.check_root(base)
                 load_cmd = 'loadfile "%s"' % os.path.join(base, name)
             else:
                 load_cmd = 'loadfile "http://%s"' %  name
