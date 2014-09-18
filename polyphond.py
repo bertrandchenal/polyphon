@@ -233,9 +233,12 @@ def load_config():
     config.optionxform = str
     config.read(config_file)
 
+    curr_path = os.path.dirname(os.path.abspath(__file__))
+    default_static = os.path.join(curr_path, 'static')
+    default_log = os.path.join(curr_path, 'polyphon.log')
     data = {
-        'static': 'static',
-        'logfile': 'polyphon.log',
+        'static': default_static,
+        'logfile': default_log,
     }
 
     if not 'main' in config:
@@ -252,7 +255,6 @@ def load_config():
         if value.startswith('http://'):
             value = value[7:]
         data['radios'].append((key, value))
-
 
     return Option(**data)
 
