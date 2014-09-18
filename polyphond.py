@@ -118,8 +118,9 @@ class Context:
         for pos, name in enumerate(names):
             if kind == 'file':
                 base = os.path.join(self.music, *path)
-                self.check_root(base)
-                load_cmd = 'loadfile "%s"' % os.path.join(base, name)
+                full_path = os.path.join(base, name)
+                self.check_root(full_path)
+                load_cmd = 'loadfile "%s"' % full_path
             else:
                 load_cmd = 'loadfile "http://%s"' %  name
 
