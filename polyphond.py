@@ -37,8 +37,9 @@ class ChrootException(Exception):
 class Context:
 
     def __init__(self, option):
-        if not option.music:
-            exit('"music" path not defined')
+        if not option.get('music'):
+            app.logger.error('Music path not defined')
+            exit()
 
         self.music = self.expand_path(option.music)
         self.static = self.expand_path(option.static)
@@ -51,7 +52,8 @@ class Context:
     def expand_path(path):
         path = os.path.expanduser(path)
         if not os.path.exists(path):
-            exit('Path "%s" not found' % path)
+            app.logger.error('Path "%s" not found' % path)
+            exit()
         return os.path.realpath(path)
 
     def browse(self, kind, path):
@@ -217,6 +219,9 @@ class Option:
     def __init__(self, **kw):
         self.__dict__.update(kw)
 
+    def get(self, key, default=None):
+        return getattr(self, key, default)
+
 
 def load_config():
 
@@ -227,6 +232,7 @@ def load_config():
 
     if not os.path.exists(config_file):
         exit('Config file "%s" not found' % config_file)
+
 
     config = configparser.ConfigParser()
     # The default optionxform converts key to lowercase
@@ -243,6 +249,7 @@ def load_config():
 
     if not 'main' in config:
         exit('Section "main" missing in config file')
+
     for key in config['main']:
         data[key] = config['main'][key]
 
@@ -261,14 +268,15 @@ def load_config():
 
 if __name__ == '__main__':
     option = load_config()
-    CTX = Context(option)
-    app.static_folder = option.static
-
     handler = RotatingFileHandler(option.logfile)
     handler.setLevel(logging.INFO)
     formatter = logging.Formatter(
         '%(asctime)s:%(name)s:%(levelname)s:%(message)s')
     handler.setFormatter(formatter)
     app.logger.addHandler(handler)
+
+    CTX = Context(option)
+    app.static_folder = option.static
+
     app.logger.warning('Server started')
     app.run(host='0.0.0.0', port=8081, threaded=True)
