@@ -97,9 +97,9 @@ class Context:
 
     def launch_process(self, kind, names, path):
         if self.process:
-            self.process.stdin.write(b'quit\n')
-            self.process.stdin.flush()
-            self.process.wait()
+            if not self.process.stdin.closed:
+                self.process.stdin.write(b'quit\n')
+                self.process.stdin.flush()
 
         cmd = "mplayer -slave -quiet -idle"
         self.process = subprocess.Popen(
