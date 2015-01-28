@@ -213,12 +213,16 @@ Ctx.prototype.auto_scroll = function() {
         var header_height = this.header.height();
 
         var goto_pos;
-        if (el_pos < header_pos + header_height + el_height) {
-            goto_pos = scroll_pos - page;
-        } else if (el_pos + footer_height >= footer_pos) {
-            goto_pos = scroll_pos + page;
-        }
 
+        if (el_pos < header_pos + header_height + el_height) {
+            // Higher than header -> scrolling up
+            var delta = header_pos + header_height + el_height - el_pos;
+            goto_pos = scroll_pos - Math.max(page, delta);
+        } else if (el_pos + footer_height >= footer_pos) {
+            // Lower than footer -> scrolling down
+            var delta = el_pos + footer_height - footer_pos;
+            goto_pos = scroll_pos + Math.max(page, delta);
+        }
         $('body, html').scrollTop(goto_pos);
     }.bind(this), 10);
 };
