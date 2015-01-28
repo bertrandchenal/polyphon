@@ -93,7 +93,7 @@ class Context:
     def play(self, kind, names, path):
         self.paused = False
         self.status['paused'] = self.paused
-        self.status['playing_path'] = path
+        self.status['playing_path'] = [kind] + path
         threading.Thread(target=self.launch_process,
                          args=(kind, names, path)).start()
 
@@ -200,7 +200,7 @@ def play(path):
             return
     else:
         names = tail
-        folder = None
+        folder = []
     names = names.split('+')
 
     with PLAY_PAUSE_LOCK:

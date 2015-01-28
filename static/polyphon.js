@@ -104,6 +104,8 @@ Ctx.prototype.browse = function() {
 
     prm.done(function(files) {
         this.listing.html(files);
+        this.update_active();
+        this.auto_scroll();
     }.bind(this));
 };
 
@@ -164,6 +166,29 @@ Ctx.prototype.update_status = function() {
     return prm;
 };
 
+Ctx.prototype.update_active = function() {
+    var pp = this.playing_path();
+    var path_pos = 0;
+    for (;path_pos < this.path.length; path_pos++) {
+
+        if (this.path[path_pos] != pp[path_pos]) {
+            return;
+        }
+    }
+    var name;
+    if (path_pos == pp.length) {
+        name = this.filename();
+    } else {
+        name = pp[path_pos];
+    }
+
+    this.listing.find('a').each(function(el_pos, el) {
+        el = $(el);
+        if (el.data('url') == name) {
+            el.addClass('active');
+        }
+    });
+};
 
 Ctx.prototype.highlight = function(el, old_el) {
     if (!old_el) {
