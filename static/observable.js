@@ -1,8 +1,9 @@
 "use strict"
 
-// The observable constructor. If the param is a function, it will be
-// considered as computed observable (I.E readonly), if not, the
-// param value is user as the initial value of a simple observable.
+// The observable constructor. If the first param is a function, it
+// will be considered as computed observable (I.E readonly), if not,
+// the first param is user as the initial value of a simple
+// observable.
 var Observable = function(value) {
 
     if (!this)
@@ -33,14 +34,16 @@ var Observable = function(value) {
 // observable value or update it (if one param is given). If the new
 // value differs from the old one, the trigger method is called.
 Observable.prototype.getset = function(value) {
-    if (arguments.length && !this.equal(this.value, value)) {
-        var old_value = this.value
-        this.value = value;
-        this.trigger(this.value, old_value);
+    if (arguments.length) {
+         if (!this.equal(this.value, value)) {
+             var old_value = this.value
+             this.value = value;
+             this.trigger(this.value, old_value);
+         }
     } else {
         Observable.last_get(this);
+        return this.value;
     }
-    return this.value;
 };
 
 // equal tells if the current values is equal to the given param
@@ -61,8 +64,12 @@ Observable.prototype.trigger = function(old_value) {
         return;
     }
     this.trigger_runnning = true;
-    for (var pos in this.subscribers) {
-        this.subscribers[pos](this.value, old_value);
+
+    // Loop on a clone, because a subscriber my interfere with
+    // subscribers list (aka trigger_computed)
+    var subs_clone = this.subscribers.slice();
+    for (var pos in subs_clone) {
+        subs_clone[pos](this.value, old_value);
     }
     this.trigger_runnning = false;
 };
@@ -80,10 +87,13 @@ Observable.prototype.trigger_computed = function() {
     // Record which observables are accessed ..
     var to_subscribe = [];
     var dispose = Observable.last_get.subscribe(function(obj) {
-        if (to_subscribe.indexOf(obj) < 0 && this !== obj) {
+        // 'this' is the last_get observable
+        if (to_subscribe.indexOf(obj) < 0 && obj !== this) {
             to_subscribe.push(obj);
         }
     });
+
+    // Launch computation
     this.value(this.computed());
     dispose();
 
@@ -98,7 +108,7 @@ Observable.prototype.trigger_computed = function() {
 
 // The subscribe method allows to attach a callback function 'fn' that
 // will be triggered when the observable change. If 'obs' is given,
-// the subscribe function will attach the collback to the given
+// the subscribe function will attach the callback to the given
 // observable instead of attaching it to 'this'. It returns a dispose
 // method which, if called, will detach (or unsubscribe) the callback
 // function.
@@ -106,11 +116,11 @@ Observable.subscribe = function(fn, obs) {
     if (!obs) {
         obs = this;
     }
-    var binded = fn.bind(obs);
-    obs.subscribers.push(binded);
+    fn = fn.bind(obs);
+    obs.subscribers.push(fn);
     var dispose = function() {
         for (var pos in obs.subscribers) {
-            if (obs.subscribers[pos] === binded) {
+            if (obs.subscribers[pos] === fn) {
                 obs.subscribers.splice(pos, 1);
             }
         };
@@ -123,13 +133,13 @@ Observable.last_get = new Observable();
 
 // helper to define auto-updating dom element
 // Ex: el('input', {'type': 'text', 'val': my_observable})
-Observable.bind = function(tag, args) {
-    var el = $(tag);
+Observable.bind = function(selector, args) {
+    var el = $(selector);
     new Observable(function() {
         for (var key in args) {
             var arg = args[key];
             if (arg.subscribe && typeof arg.subscribe == 'function') {
-                // arg is an observable
+                // arg is an observable; get his value
                 arg = arg();
             } else if (typeof arg == 'function') {
                 arg = arg.bind(el)
