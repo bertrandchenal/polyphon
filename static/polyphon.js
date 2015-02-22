@@ -29,12 +29,23 @@ var Ctx = function(el) {
     this.track_pos = new Observable('');
     this.track_percent = new Observable('1%');
     this.playing_path = new Observable([]);
+    this.listing = new Observable();
+    this.listing_ul = $('#listing');
+
+    // Plug subscribers
+    this.listing.subscribe(function(new_value) {
+        this.listing_ul.html(new_value);
+        this.update_active();
+        this.auto_scroll();
+    }.bind(this));
+    this.playing_path.subscribe(function(new_) {
+        this.update_active();
+    }.bind(this));
 
     // Bind DOM
     Observable.bind('#track_pos', {
         'text': this.track_pos
     })
-
 
     Observable.bind('#percent_bar', {
         'width': this.track_percent
@@ -55,9 +66,8 @@ var Ctx = function(el) {
 
 
     // Bind DOM events
-    this.listing = this.el.find('#listing');
-    this.listing.on('click', 'a.file', this.play.bind(this));
-    this.listing.on('click', 'a.dir', this.drill.bind(this));
+    this.listing_ul.on('click', 'a.file', this.play.bind(this));
+    this.listing_ul.on('click', 'a.dir', this.drill.bind(this));
     this.el.find('#up').click(this.go_up.bind(this));
     this.el.find('#radio').click(this.go_radio.bind(this));
     this.el.find('#file').click(this.go_file.bind(this));
@@ -65,16 +75,19 @@ var Ctx = function(el) {
     this.footer = this.el.find('#footer');
     this.header = this.el.find('#header');
 
+
+    // Show home screen
     this.browse();
+    // Launch update loop
     this.update_status();
-};
+ };
 
 Ctx.prototype.drill = function(ev) {
     var el = $(ev.target);
     this.highlight(el.parent('li'));
     var name = el.attr('data-url');
     this.path.push(name);
-    this.drill_stack.push(this.listing.find('li').detach());
+    this.drill_stack.push(this.listing_ul.find('li').detach());
     this.browse();
 };
 
@@ -83,8 +96,7 @@ Ctx.prototype.go_up = function() {
         // First element contains source type
         this.path.pop();
         var items = this.drill_stack.pop();
-        this.listing.html(items);
-        this.auto_scroll();
+        this.listing(items);
     }
 };
 
@@ -103,9 +115,7 @@ Ctx.prototype.browse = function() {
     var prm = $.get('browse/' + this.path.join('/'))
 
     prm.done(function(files) {
-        this.listing.html(files);
-        this.update_active();
-        this.auto_scroll();
+        this.listing(files);
     }.bind(this));
 };
 
@@ -169,8 +179,10 @@ Ctx.prototype.update_status = function() {
 Ctx.prototype.update_active = function() {
     var pp = this.playing_path();
     var path_pos = 0;
-    for (;path_pos < this.path.length; path_pos++) {
 
+    if (!pp) return;
+
+    for (;path_pos < this.path.length; path_pos++) {
         if (this.path[path_pos] != pp[path_pos]) {
             return;
         }
@@ -182,17 +194,21 @@ Ctx.prototype.update_active = function() {
         name = pp[path_pos];
     }
 
-    this.listing.find('a').each(function(el_pos, el) {
+    this.listing_ul.find('a').each(function(el_pos, el) {
         el = $(el);
         if (el.data('url') == name) {
+            // Clear existing active
+            this.listing_ul.find('.active').removeClass('active');
+            // Set new active
             el.addClass('active');
+            return;
         }
-    });
+    }.bind(this));
 };
 
 Ctx.prototype.highlight = function(el, old_el) {
     if (!old_el) {
-        old_el = this.listing.find('.highlight');
+        old_el = this.listing_ul.find('.highlight');
     }
     old_el.removeClass('highlight');
     el.addClass('highlight');
@@ -202,7 +218,7 @@ Ctx.prototype.go_next = function(backward) {
     var el = $('.highlight');
     if (!el.length) {
         var sel = backward ? 'li:last-child': 'li:first-child';
-        el = this.listing.find(sel);
+        el = this.listing_ul.find(sel);
         sibling = el;
     } else {
         var sibling = backward ? el.prev() : el.next();
@@ -217,9 +233,9 @@ Ctx.prototype.go_next = function(backward) {
 
 
 Ctx.prototype.auto_scroll = function() {
-    var el = this.listing.find('.highlight');
+    var el = this.listing_ul.find('.highlight');
     if (!el.length) {
-        el = this.listing.find('.active');
+        el = this.listing_ul.find('.active');
     }
     if (!el.length) {
         return;
@@ -277,7 +293,7 @@ var init = function() {
             break;
         case 13: // return
         case 39: // right
-            ctx.listing.find('.highlight a').click();
+            ctx.listing_ul.find('.highlight a').click();
             break;
         case 8: // backspace
         case 37: // left
