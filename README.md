@@ -1,5 +1,7 @@
-
 # Polyphon
+
+Web UI for mplayer.
+Play files on the local disks or radio over the web.
 
 ## Usage
 
