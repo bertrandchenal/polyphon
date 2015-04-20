@@ -26,6 +26,7 @@ var Observable = function(value) {
         getset.subscribe = Observable.subscribe.bind(this);
         getset.equal = Observable.set_equal.bind(this);
         getset.trigger = Observable.prototype.trigger.bind(this);
+        getset._this = this;
         return getset;
     };
 };
@@ -35,11 +36,11 @@ var Observable = function(value) {
 // value differs from the old one, the trigger method is called.
 Observable.prototype.getset = function(value) {
     if (arguments.length) {
-         if (!this.equal(this.value, value)) {
-             var old_value = this.value
-             this.value = value;
-             this.trigger(this.value, old_value);
-         }
+        if (!this.equal(this.value, value)) {
+            var old_value = this.value
+            this.value = value;
+            this.trigger(this.value, old_value);
+        }
     } else {
         Observable.last_get(this);
         return this.value;
@@ -87,12 +88,20 @@ Observable.prototype.trigger_computed = function() {
     // Record which observables are accessed ..
     var to_subscribe = [];
     var dispose = Observable.last_get.subscribe(function(obj) {
+        if (obj === null) {
+            // last_get may contain null (reset)
+            return;
+        }
         // 'this' is the last_get observable
         if (to_subscribe.indexOf(obj) < 0 && obj !== this) {
             to_subscribe.push(obj);
         }
     });
 
+    // Reset last_get because it may already contain the first
+    // observable accessed in the computed function (and in this
+    // situation we will not collect it without reset)
+    Observable.last_get(null)
     // Launch computation
     this.value(this.computed());
     dispose();
@@ -132,7 +141,7 @@ Observable.subscribe = function(fn, obs) {
 Observable.last_get = new Observable();
 
 // helper to define auto-updating dom element
-// Ex: el('input', {'type': 'text', 'val': my_observable})
+// Ex: el('h1', {'text': my_observable})
 Observable.bind = function(selector, args) {
     var el = $(selector);
     new Observable(function() {
@@ -152,4 +161,40 @@ Observable.bind = function(selector, args) {
         }
     });
     return el;
+};
+
+Observable.$ = function(selector) {
+    this.el = $(selector);
+    this.type = this.el.prop('type');
+};
+
+Observable.$.prototype.val = function(obs) {
+    if (this.type == 'checkbox') {
+        this.el.prop('checked', obs());
+        obs.subscribe(function() {
+            this.el.prop('checked', obs());
+        }.bind(this));
+        this.el.change(function() {
+            obs(this.el.prop('checked'));
+        }.bind(this));
+    } else if (this.type == 'radio') {
+        this.el.prop('checked', this.el.prop('value') == obs());
+        obs.subscribe(function() {
+            this.el.prop('checked', this.el.prop('value') == obs());
+        }.bind(this));
+        this.el.change(function() {
+            if (this.el.prop('checked')) {
+                obs(this.el.prop('value'));
+            }
+        }.bind(this));
+    } else {
+        this.el.val(obs());
+        obs.subscribe(function() {
+            this.el.val(obs());
+        }.bind(this));
+        this.el.on('change keyup', function() {
+            obs(this.el.val());
+        }.bind(this));
+
+    }
 };

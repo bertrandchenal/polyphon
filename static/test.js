@@ -72,17 +72,86 @@ var test = function() {
     assert_equal(total_count, 2)
 
 
-    // Mix computed and subsriber
-    count = 7;
+    // Mix computed and subscriber
+    var computed_count = 0;
+    var subscribe_count = 0;
     var z = new Observable('ham');
+    z() // if the computed is accessed first it get
     var computed = new Observable(function() {
         z()
+        computed_count++;
     })
-    var y = new Observable('ham');
     z.subscribe(function () {
-        count++;
+        subscribe_count++;
     });
     z('spam');
-    assert_equal(count, 8)
+    z('foo');
+    // +1 because computed trigger an empty run:
+    assert_equal(subscribe_count+1, computed_count)
+
+
+    // DOM tests
+    var my_val = new Observable();
+    var types = [
+        'checkbox',
+        'color',
+        'date',
+        'datetime',
+        'email',
+        'month',
+        'password',
+        'range',
+        'text',
+        'week',
+    ];
+    for (var pos in types) {
+        var type = types[pos];
+        build_ui(type, my_val);
+    };
+
+    // test radio
+    var input1 = $('<input/>', {
+        'type': 'radio',
+        'value': 'radio1',
+        'name': 'test',
+    });
+    var input2 = $('<input/>', {
+        'type': 'radio',
+        'value': 'radio2',
+        'name': 'test',
+    });
+    $('body').append(input1, input2);
+    input1 = new Observable.$(input1);
+    input1.val(my_val);
+
+    input2 = new Observable.$(input2);
+    input2.val(my_val);
+
+    my_val.subscribe(function() {
+        console.log('radio', my_val());
+    });
 }
+
+
+var build_ui = function(type, my_val) {
+    var input = $('<input/>', {
+        'type': type,
+    });
+    var button = $('<button/>', {
+        'text': 'click',
+    });
+    $('body').append(input, button);
+    input = new Observable.$(input);
+    input.val(my_val);
+
+    my_val.subscribe(function() {
+        console.log(type, my_val());
+    });
+
+    button.click(function() {
+        console.log('click', my_val());
+    });
+
+};
+
 $(test);
