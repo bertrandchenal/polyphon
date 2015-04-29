@@ -97,6 +97,13 @@ Ctx.prototype.go_up = function() {
         this.path.pop();
         var items = this.drill_stack.pop();
         this.listing(items);
+    } else {
+	if (this.path[0] == ['http']) {
+	    this.go_file();
+	} else {
+	    this.go_radio();
+	}
+
     }
 };
 
