@@ -121,7 +121,7 @@ class Context:
         f = os.path.join(path, name)
         is_dir = os.path.isdir(f)
         is_img = False
-        if not is_dir:
+        if not is_dir and Image:
             filetype, _ = mimetypes.guess_type(f)
             if filetype:
                 mediatype, subtype = filetype.split('/')
