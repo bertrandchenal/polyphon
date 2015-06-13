@@ -103,9 +103,16 @@ Ctx.prototype.drill = function(ev) {
 
 Ctx.prototype.go_up = function() {
     this.after = 0;
+
+    // First element contains source type
     if (this.path.length > 1) {
-        // First element contains source type
         this.path.pop();
+    } else {
+	    if (this.path[0] == ['http']) {
+            this.path = ['file']
+	    } else {
+            this.path = ['http']
+	    }
     }
     this.browse()
     return false;
