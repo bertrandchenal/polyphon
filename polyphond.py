@@ -402,7 +402,7 @@ if __name__ == '__main__':
     app.logger.addHandler(handler)
 
     CTX = Context(option)
-    if option.debug:
+    if option.get('debug'):
         BROWSE_LRU = LRU(0)
     else:
         BROWSE_LRU = LRU()
@@ -410,4 +410,4 @@ if __name__ == '__main__':
     app.static_folder = option.static
 
     app.logger.warning('Server started')
-    app.run(host='0.0.0.0', port=8081, threaded=True, debug=option.debug)
+    app.run(host='0.0.0.0', port=8081, threaded=True, debug=option.get('debug'))
