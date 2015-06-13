@@ -83,6 +83,12 @@ body {
     font-size: 80%;
 }
 
+#listing > li > a.more {
+    text-align: center;
+    font-variant: small-caps;
+    font-size: 90%;
+}
+
 .highlight > a {
     background-color: #C2D5E2;
 }
@@ -150,7 +156,17 @@ a {
     font-weight: bold;
 }
 
+img {
+  vertical-align: middle;
+}
 
+.dialog {
+    position: relative;
+    left: 50%;
+    top: 50%;
+    margin-left: -50px;
+    z-index: 100;
+}
 
 /* Fontello */
 @font-face {

@@ -20,10 +20,11 @@ var fmt_sec = function(val) {
     return res;
 };
 
-var Ctx = function(el) {
+var Ctx = function(el, params) {
     this.el = el;
-    this.path = ['file'];
-    this.drill_stack = [];
+    this.path = params.p || ['file'];
+    this.after = params.a;
+    this.browse_cache = {};
     this.paused = new Observable();
     this.filename = new Observable();
     this.track_pos = new Observable('');
@@ -67,10 +68,12 @@ var Ctx = function(el) {
 
     // Bind DOM events
     this.listing_ul.on('click', 'a.file', this.play.bind(this));
+
     this.listing_ul.on('click', 'a.dir', this.drill.bind(this));
     this.el.find('#up').click(this.go_up.bind(this));
     this.el.find('#radio').click(this.go_radio.bind(this));
     this.el.find('#file').click(this.go_file.bind(this));
+    $('body').on('click', '.more', this.load_more.bind(this));
 
     this.footer = this.el.find('#footer');
     this.header = this.el.find('#header');
@@ -82,39 +85,74 @@ var Ctx = function(el) {
     this.update_status();
  };
 
+Ctx.prototype.set_state = function(params) {
+    this.path = params.p;
+    this.after = params.a;
+    this.browse();
+};
+
 Ctx.prototype.drill = function(ev) {
+    this.after = 0;
     var el = $(ev.target);
     this.highlight(el.parent('li'));
     var name = el.attr('data-url');
     this.path.push(name);
-    this.drill_stack.push(this.listing_ul.find('li').detach());
     this.browse();
+    return false;
 };
 
 Ctx.prototype.go_up = function() {
+    this.after = 0;
     if (this.path.length > 1) {
         // First element contains source type
         this.path.pop();
-        var items = this.drill_stack.pop();
-        this.listing(items);
     }
+    this.browse()
+    return false;
 };
 
 Ctx.prototype.go_radio = function() {
     this.path = ['http']
     this.browse();
+    return false;
 };
 
 
 Ctx.prototype.go_file = function() {
     this.path = ['file']
     this.browse();
+    return false;
+};
+
+Ctx.prototype.load_more = function(ev) {
+    var target = $(ev.target);
+    this.after = parseInt(target.attr('after'));
+    target.text('Loading ...');
+    this.browse();
+    return false;
 };
 
 Ctx.prototype.browse = function() {
-    var prm = $.get('browse/' + this.path.join('/'))
+    var state = {
+        'p': this.path,
+    }
+    if (this.after > 0) {
+        state['a'] = this.after;
+    }
+    var params = JSON.stringify(state);
+    var hash = '#' + params;
 
-    prm.done(function(files) {
+    if (window.location.hash != hash) {
+        window.history.pushState(null, "Title", hash);
+    }
+
+    var cached = this.browse_cache[params]
+    if (cached) {
+        this.listing(cached);
+        return
+    }
+    $.get('browse/' + params).done(function(files) {
+        this.browse_cache[params] = files;
         this.listing(files);
     }.bind(this));
 };
@@ -122,6 +160,7 @@ Ctx.prototype.browse = function() {
 Ctx.prototype.do_pause = function() {
     var prm = $.get('pause');
     prm.done(this.update_status.bind(this));
+    return false;
 };
 
 
@@ -141,7 +180,16 @@ Ctx.prototype.play = function(ev) {
 
     var prm = $.get('play/' + this.path.join('/') + '/' + names.join('+'))
     prm.done(this.update_status.bind(this));
+    return false;
 };
+
+Ctx.prototype.show = function(ev) {
+    var el = $(ev.target);
+    var data_url = el.attr('data-url');
+    var url = 'show/' + this.path.join('/') + '/' + data_url
+    window.location = url;
+    return false;
+}
 
 Ctx.prototype.update_status = function() {
     // Clear any existing timer
@@ -269,8 +317,31 @@ Ctx.prototype.auto_scroll = function() {
 };
 
 
+var get_state = function() {
+    var params;
+    try {
+        params = JSON.parse(window.location.hash.slice(1));
+    } catch(e) {
+        console.log(e)
+        params = {};
+    }
+    var path = params['p'];
+    if (!path) {
+        return {};
+    }
+    if (['file', 'http'].indexOf(path[0]) != 0) {
+        return {}
+    }
+    return params;
+};
+
 var init = function() {
-    var ctx = new Ctx($('body'));
+    var params = get_state();
+    var ctx = new Ctx($('body'), params);
+
+    window.onpopstate = function(event) {
+        ctx.set_state(get_state());
+    };
 
     $('body').keydown(function (ev) {
         if (ev.ctrlKey || ev.altKey) {

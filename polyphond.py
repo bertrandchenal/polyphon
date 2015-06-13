@@ -1,27 +1,55 @@
 #! /usr/bin/env python3
-import fcntl
 import configparser
+import gzip
+import json
 import logging
+import mimetypes
 import os
 import subprocess
 import select
 import sys
 import threading
+from base64 import b64encode
+from io import StringIO, BytesIO
 from logging.handlers import RotatingFileHandler
 from time import sleep
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request, send_file
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 PLAY_PAUSE_LOCK = threading.Lock()
+MAX_LEN = 2*10**4
 
 CTX = None
-LI_TPL = '''
+BROWSE_LRU = None
+
+IMG_TPL = '''
 <li>
-  <a href="#" data-url="{url}"
-     class="{type}">{name}
+  <a href="show/file/{url}"
+     class="{type}">
+    <img src="data:image/png;base64,{src}"> {name}
   </a>
 </li>
 '''
+FILE_TPL = '''
+<li>
+<a href="#" data-url="{url}"
+   class="{type}">{name}
+</a>
+</li>
+'''
+MORE_TPL = '''
+<li>
+<a href="#" class="more" after="%s">
+More
+</a>
+</li>
+'''
+
 COMMANDS = [
     b'get_file_name',
     b'get_time_pos',
@@ -33,6 +61,38 @@ app = Flask("polyphon")
 
 class ChrootException(Exception):
     pass
+
+class SizeException(Exception):
+    pass
+
+class LRU:
+
+    def __init__(self, size=1000):
+        self.fresh = {}
+        self.stale = {}
+        self.size = size
+
+    def get(self, key, default=None):
+        if key in self.fresh:
+            return self.fresh[key]
+
+        if key in self.stale:
+            value = self.stale[key]
+            # Promote key to fresh dict
+            self.set(key, value)
+            return value
+        return default
+
+    def clean(self):
+        # Fresh is put in stale, new empty fresh is created
+        self.stale = self.fresh
+        self.fresh = {}
+
+    def set(self, key, value):
+        self.fresh[key] = value
+        if len(self.fresh) > self.size:
+            self.clean()
+
 
 class Context:
 
@@ -56,7 +116,40 @@ class Context:
             exit()
         return os.path.realpath(path)
 
-    def browse(self, kind, path):
+
+    def browse_item(self, path, name):
+        f = os.path.join(path, name)
+        is_dir = os.path.isdir(f)
+        is_img = False
+        if not is_dir:
+            filetype, _ = mimetypes.guess_type(f)
+            if filetype:
+                mediatype, subtype = filetype.split('/')
+                is_img = mediatype == 'image'
+
+        if not is_img:
+            return FILE_TPL.format(**{
+                'type': 'dir' if is_dir else 'file',
+                'url': name,
+                'name': name.replace('_', ' '),
+            })
+
+        im = Image.open(f)
+        im.thumbnail((36,36))
+
+        imbuf = BytesIO()
+        im.save(imbuf, format=subtype)
+        imstr = b64encode(imbuf.getvalue()).decode()
+
+        return IMG_TPL.format(**{
+            'type': 'img',
+            'url': os.path.join(path, name),
+            'name': name.replace('_', ' '),
+            'src': imstr,
+        })
+
+    def browse(self, kind, path, after):
+        total_len = 0
         if kind == 'file':
             res = []
 
@@ -66,21 +159,31 @@ class Context:
 
             names = os.listdir(full_path)
             names.sort()
-            for name in names:
-                f = os.path.join(full_path, name)
-                yield {
-                    'type': 'dir' if os.path.isdir(f) else 'file',
-                    'url': name,
-                    'name': name.replace('_', ' ')
-                }
+            if after:
+                names = names[after:]
+            for pos, name in enumerate(names):
+                if name.startswith('.'):
+                    continue
+                item = self.browse_item(full_path, name)
+                total_len += len(item)
+                if total_len > MAX_LEN:
+                    yield MORE_TPL % (after + pos)
+                    return
+                yield item
 
         elif kind == 'http':
             for name, url in self.radios:
-                yield {
+                attr = {
                     'type': 'file',
                     'url': url,
                     'name': name.replace('_', ' ')
                 }
+                item = FILE_TPL.format(**attr)
+                total_len += len(item)
+                if total_len > MAX_LEN:
+                    yield MORE_TPL % after + pos
+                    return
+                yield item
 
     def pause(self):
         if self.process and self.process.returncode is None:
@@ -116,7 +219,6 @@ class Context:
         threading.Thread(target=self.write_loop, args=(self.process,)).start()
         threading.Thread(target=self.read_loop, args=(self.process,)).start()
 
-        #TODO put volume to 100%
         for pos, name in enumerate(names):
             if kind == 'file':
                 base = os.path.join(self.music, *path)
@@ -182,14 +284,38 @@ def index():
 def status():
     return jsonify(**CTX.status)
 
-@app.route('/browse/<path:path>')
-def browse(path):
-    path_list = path.split('/')
-    if not path_list:
-        return ''
-    kind = path_list.pop(0)
-    items = CTX.browse(kind, path_list)
-    return '\n'.join(LI_TPL.format(**i) for i in items)
+@app.route('/browse/<path:json_args>')
+def browse(json_args):
+    args = json.loads(json_args)
+    path_list = args.get('p')
+    after = args.get('a', 0)
+    content = BROWSE_LRU.get(json_args)
+
+    if not content:
+        if not path_list:
+            return ''
+        kind = path_list.pop(0)
+        items = CTX.browse(kind, path_list, after)
+
+        content = '\n'.join(items)
+        content = gzip.compress(content.encode())
+        BROWSE_LRU.set(json_args, content)
+
+    resp = app.response_class()
+    accept_encoding = request.headers.get('Accept-Encoding', '')
+    if 'gzip' not in accept_encoding.lower():
+        resp.set_data(gzip.decompress(content))
+    else:
+        resp.headers['Content-Encoding'] = 'gzip'
+        resp.set_data(content)
+    return resp
+
+@app.route('/show/<path:path>')
+def show(path):
+    kind, tail = path.split('/', 1)
+    full_path = os.path.join(CTX.music, tail)
+    return send_file(full_path)
+
 
 @app.route('/play/<path:path>')
 def play(path):
@@ -276,7 +402,12 @@ if __name__ == '__main__':
     app.logger.addHandler(handler)
 
     CTX = Context(option)
+    if option.debug:
+        BROWSE_LRU = LRU(0)
+    else:
+        BROWSE_LRU = LRU()
+
     app.static_folder = option.static
 
     app.logger.warning('Server started')
-    app.run(host='0.0.0.0', port=8081, threaded=True)
+    app.run(host='0.0.0.0', port=8081, threaded=True, debug=option.debug)
