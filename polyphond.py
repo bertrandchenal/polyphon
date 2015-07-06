@@ -111,11 +111,7 @@ class Context:
     @staticmethod
     def expand_path(path):
         path = os.path.expanduser(path)
-        if not os.path.exists(path):
-            app.logger.error('Path "%s" not found' % path)
-            exit()
         return os.path.realpath(path)
-
 
     def browse_item(self, path, name):
         f = os.path.join(path, name)
@@ -156,6 +152,10 @@ class Context:
             rel_path = os.path.join(*path) if path else ''
             full_path = os.path.join(self.music, rel_path)
             self.check_root(full_path)
+
+            if not os.path.exists(full_path):
+                yield '<p class="warning">Path "%s" not found</p>' % full_path
+                return
 
             names = os.listdir(full_path)
             names.sort()

@@ -160,12 +160,9 @@ img {
   vertical-align: middle;
 }
 
-.dialog {
-    position: relative;
-    left: 50%;
-    top: 50%;
-    margin-left: -50px;
-    z-index: 100;
+.warning {
+    font-weight: bold;
+    margin: 2em;
 }
 
 /* Fontello */
