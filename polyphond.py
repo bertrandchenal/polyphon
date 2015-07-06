@@ -162,7 +162,7 @@ class Context:
             if after:
                 names = names[after:]
             for pos, name in enumerate(names):
-                if name.startswith('.'):
+                if name.startswith(('.', '_', '@')):
                     continue
                 item = self.browse_item(full_path, name)
                 total_len += len(item)
