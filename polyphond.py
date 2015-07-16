@@ -296,8 +296,9 @@ def browse(json_args):
             return ''
         kind = path_list.pop(0)
         items = CTX.browse(kind, path_list, after)
-
         content = '\n'.join(items)
+        if not content:
+            return ''
         content = gzip.compress(content.encode())
         BROWSE_LRU.set(json_args, content)
 
