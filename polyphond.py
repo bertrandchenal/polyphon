@@ -131,7 +131,11 @@ class Context:
             })
 
         im = Image.open(f)
-        im.thumbnail((36,36))
+        try:
+            im.thumbnail((36,36))
+        except OSError as e:  # Raised if decoder is missing
+            app.logger.exception(e)
+            return ''
 
         imbuf = BytesIO()
         im.save(imbuf, format=subtype)
