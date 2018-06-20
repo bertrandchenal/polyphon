@@ -22,7 +22,7 @@ var fmt_sec = function(val) {
 
 var Ctx = function(el, params) {
     this.el = el;
-    this.path = params.p || ['file'];
+    this.path = params.p || ['http'];
     this.after = params.a;
     this.browse_cache = {};
     this.paused = new Observable();
