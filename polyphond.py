@@ -210,7 +210,7 @@ class Context:
                 self.process.stdin.write(b'quit\n')
                 self.process.stdin.flush()
 
-        cmd = "mplayer -slave -quiet -idle"
+        cmd = "mplayer -slave -quiet -idle -novideo"
         self.process = subprocess.Popen(
             cmd,
             shell=True,
