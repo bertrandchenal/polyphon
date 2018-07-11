@@ -179,13 +179,13 @@ Ctx.prototype.play = function(ev) {
     if (this.path[0] == 'file') {
         var names = $.map(
             el.parent().nextAll('li').addBack().children('a.file'),
-            function (e) {return $(e).data('url');}
+            function (e) {return encodeURIComponent($(e).data('url'));}
         );
     } else {
         var names = [el.data('url')];
     }
 
-    var prm = $.get('play/' + this.path.join('/') + '/' + names.join('+'))
+    var prm = $.get('play/' + this.path.join('/') + '/' + names.join(';'))
     prm.done(this.update_status.bind(this));
     return false;
 };

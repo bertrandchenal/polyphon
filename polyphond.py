@@ -270,7 +270,7 @@ class Context:
     def update_status(self, data):
         if not data.startswith('ANS_'):
             return
-        key, val = data[4:].split('=')
+        key, val = data[4:].split('=', 1)
         self.status[key.lower()] = val.strip().strip("'")
 
     def check_root(self, path):
@@ -332,8 +332,7 @@ def play(path):
     else:
         names = tail
         folder = []
-    names = names.split('+')
-
+    names = names.split(';')
     with PLAY_PAUSE_LOCK:
         CTX.play(kind, names, folder)
     return 'ok'
