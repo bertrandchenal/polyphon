@@ -344,13 +344,9 @@ def pause():
     return 'ok'
 
 
-class Option:
-
-    def __init__(self, **kw):
-        self.__dict__.update(kw)
-
-    def get(self, key, default=None):
-        return getattr(self, key, default)
+class Option(dict):
+    def __getattr__(self, key):
+        return self[key]
 
 
 def load_config():
@@ -385,7 +381,7 @@ def load_config():
 
     data['radios'] = []
     if not 'radios' in config:
-        return data
+        return Option(**data)
 
     for key in config['radios']:
         value = config['radios'][key]

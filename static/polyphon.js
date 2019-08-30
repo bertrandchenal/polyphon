@@ -175,12 +175,14 @@ Ctx.prototype.play = function(ev) {
     // Update highlight
     var el = $(ev.target);
     this.highlight(el.parent('li'));
+    var get_url = function (e) {
+        return encodeURIComponent($(e).data('url'));
+    }
 
     if (this.path[0] == 'file') {
-        var names = $.map(
-            el.parent().nextAll('li').addBack().children('a.file'),
-            function (e) {return encodeURIComponent($(e).data('url'));}
-        );
+        var prev_el = el.parent().prevAll('li').children('a.file');
+        var next_el = el.parent().nextAll('li').addBack().children('a.file');
+        var names = $.map(next_el, get_url).concat($.map(prev_el, get_url));
     } else {
         var names = [el.data('url')];
     }
