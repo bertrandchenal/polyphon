@@ -182,7 +182,9 @@ Ctx.prototype.play = function(ev) {
     if (this.path[0] == 'file') {
         var prev_el = el.parent().prevAll('li').children('a.file');
         var next_el = el.parent().nextAll('li').addBack().children('a.file');
-        var names = $.map(next_el, get_url).concat($.map(prev_el, get_url));
+        var names = $.map(next_el, get_url).concat(
+	    $.map(prev_el, get_url).reverse()
+	);
     } else {
         var names = [el.data('url')];
     }
